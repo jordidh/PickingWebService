@@ -21,7 +21,9 @@ public class Service : System.Web.Services.WebService
         string warehouseCode, 
         string clientName,
         string shipNumber,
-        string userCode)
+        string userCode,
+        string username, 
+        string password)
     {
         OracleConnection conn = null;
         string sql = "insert into sga_littmoden.custom_sivart_picking " +
@@ -42,7 +44,53 @@ public class Service : System.Web.Services.WebService
         }
         catch (Exception ex)
         {
-            result = sql2 + " " + ex.ToString();
+            result = "Exception, " + sql2 + " " + ex.ToString();
+        }
+        finally
+        {
+            if (conn != null && conn.State == System.Data.ConnectionState.Open)
+            {
+                conn.Close();
+            }
+        }
+
+        return result;
+    }
+
+
+    [WebMethod]
+    public string ValidateWarehouseCode(string warehouseCode, string username, string password)
+    {
+        OracleConnection conn = null;
+        string sql = "select count(*) from sga_littmoden.wms_warehouse w where w.warehouse_code= '" + warehouseCode + "'";
+        string result = "OK";
+
+        try
+        {
+            conn = new OracleConnection("Data Source=orclmlx; User Id=mlxsga_protein_sivart; Password=mlxsga_protein_sivart;");
+            conn.Open();
+            OracleCommand cmd = new OracleCommand(sql, conn);
+            object res = cmd.ExecuteScalar();
+            if (res != null)
+            {
+                if (Convert.ToInt32(res) > 0)
+                {
+                    //OK
+                }
+                else
+                {
+                    result = "Error, warehouse code not found. Found " + res.ToString() + " results.";
+                }
+            }
+            else
+            {
+                result = "Error, in query (" + sql + ")";
+            }
+            cmd.Dispose();
+        }
+        catch (Exception ex)
+        {
+            result = "Exception, " + sql + " " + ex.ToString();
         }
         finally
         {
